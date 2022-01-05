@@ -1,0 +1,16 @@
+---
+title: "Tidy Modeling with R"
+author: "Jeffrey Long"
+date: "1/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Hello World
+
+This is my workbook for the book 
+["Tidy Modeling with R"](https://www.tmwr.org/).
+
