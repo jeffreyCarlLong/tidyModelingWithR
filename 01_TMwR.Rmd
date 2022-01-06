@@ -9,6 +9,79 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Libraries
+
+```{r}
+# install.packages("dplyr")
+# install.packages("rsample")
+library(dplyr)
+library(rsample)
+```
+
+
+
+## Next Steps
+
+Fix some classification issues with this neural network. 
+[https://www.tidymodels.org/learn/](https://www.tidymodels.org/learn/)
+
+
+## References
+
+Abrams, B. 2003. “The Pit of Success.” 
+https://blogs.msdn.microsoft.com/brada/2003/10/02/the-pit-of-success/.
+
+Baggerly, K, and K Coombes. 2009. “Deriving 
+Chemosensitivity from Cell Lines: Forensic Bioinformatics 
+and Reproducible Research in High-Throughput Biology.” 
+The Annals of Applied Statistics 3 (4): 1309–34.
+
+Bolstad, B. 2004. Low-Level Analysis of High-Density 
+Oligonucleotide Array Data: Background, Normalization and 
+Summarization. University of California, Berkeley.
+
+Breiman, L. 2001b. “Statistical Modeling: The Two 
+Cultures.” Statistical Science 16 (3): 199–231.
+
+Carlson, B. 2012. “Putting Oncology Patients at Risk.” 
+Biotechnology Healthcare 9 (3): 17–21.
+
+Chambers, J. 1998. Programming with Data: A Guide to the 
+S Language. Berlin, Heidelberg: Springer-Verlag.
+
+Cleveland, W. 1979. “Robust Locally Weighted Regression 
+and Smoothing Scatterplots.” Journal of the American 
+Statistical Association 74 (368): 829–36.
+
+Durrleman, S, and R Simon. 1989. “Flexible Regression 
+Models with Cubic Splines.” Statistics in Medicine 8 (5): 
+551–61.
+
+Gentleman, R, V Carey, W Huber, R Irizarry, and S Dudoit. 
+2005. Bioinformatics and Computational Biology Solutions 
+Using R and Bioconductor. Berlin, Heidelberg: 
+Springer-Verlag.
+
+Kuhn, M, and K Johnson. 2020. Feature Engineering and 
+Selection: A Practical Approach for Predictive Models. 
+CRC Press.
+
+R Core Team. 2014. R: A Language and Environment for 
+Statistical Computing. Vienna, Austria: R Foundation for 
+Statistical Computing. http://www.R-project.org/.
+
+Shmueli, G. 2010. “To Explain or to Predict?” Statistical 
+Science 25 (3): 289–310.
+
+Wickham, H, M Averick, J Bryan, W Chang, L McGowan, R 
+François, G Grolemund, et al. 2019. “Welcome to the 
+Tidyverse.” Journal of Open Source Software 4 (43).
+
+Wickham, H, and G Grolemund. 2016. R for Data Science: 
+Import, Tidy, Transform, Visualize, and Model Data. 
+O’Reilly Media, Inc.
+
+
 ## Hello World
 
 This is my workbook for the book 
@@ -694,74 +767,77 @@ interface. In dplyr by contrast, the tidyverse function
 arguments directly:
 
 ```{r}
+arrange(.data = mtcars, gear, mpg)
+```
 
+
+|   The variable names used here are “unquoted”; many 
+|   traditional R functions require a character string 
+|   to specify variables, but tidyverse functions take 
+|   unquoted names or selector functions. The selectors 
+|   allow for one or more readable rules that are 
+|   applied to the column names. For example, 
+|   ends_with("t") would select the drat and wt columns 
+|   of the mtcars data frame.
+
+Additionally, naming is crucial. If you were new to R and 
+were writing data analysis or modeling code involving 
+linear algebra, you might be stymied when searching for a 
+function that computes the matrix inverse. Using 
+`apropos("inv")` yields no candidates. It turns out that 
+the base R function for this task is `solve()`, for 
+solving systems of linear equations. For a matrix `X`, you 
+would use `solve(X)` to invert `X` (with no vector for the 
+right-hand side of the equation). This is only documented 
+in the description of one of the arguments in the help 
+file. In essence, you need to know the name of the 
+solution to be able to find the solution.
+
+The tidyverse approach is to use function names that are 
+descriptive and explicit over those that are short and 
+implicit. There is a focus on verbs (e.g. `fit`, 
+`arrange`, etc.) for general methods. Verb-noun pairs are 
+particularly effective; consider `invert_matrix()` as a 
+hypothetical function name. In the context of modeling, it 
+is also important to avoid highly technical jargon in 
+names such as Greek letters or obscure terms. Names should 
+be as self-documenting as possible.
+
+When there are similar functions in a package, function 
+names are designed to be optimized for tab-completion. For 
+example, the `glue` package has a collection of functions 
+starting with a common prefix (`glue_`) that enables users 
+to quickly find the function they are looking for.
+
+#### Reuse existing data structures
+
+Whenever possible, functions should avoid returning a 
+novel data structure. If the results are conducive to an 
+existing data structure, it should be used. This reduces 
+the cognitive load when using software; no additional 
+syntax or methods are required.
+
+One data structure that is used as much as possible in 
+tidyverse and tidymodels packages is the data frame. Data 
+frames can represent different types of data in each 
+column, and multiple values in each row. Tibbles, a type 
+of data frame described below, are preferred since they 
+have additional properties that are helpful for data 
+analysis.
+
+As an example, the `rsample` package can be used to create 
+_resamples_ of a data set, such as cross-validation or the 
+bootstrap (described in Chapter 10). The resampling 
+functions return a tibble with a column called `splits` of 
+objects that define the resampled data sets. Three 
+bootstrap samples of a data set might look like:
+
+```{r}
+boot_samp <- rsample::bootstraps(mtcars, times = 3)
+boot_samp
+class(boot_samp)
 ```
 
 
 
 
-
-
-
-
-
-## Next Steps
-
-Fix some classification issues with this neural network. 
-[https://www.tidymodels.org/learn/](https://www.tidymodels.org/learn/)
-
-
-## References
-
-Abrams, B. 2003. “The Pit of Success.” 
-https://blogs.msdn.microsoft.com/brada/2003/10/02/the-pit-of-success/.
-
-Baggerly, K, and K Coombes. 2009. “Deriving 
-Chemosensitivity from Cell Lines: Forensic Bioinformatics 
-and Reproducible Research in High-Throughput Biology.” 
-The Annals of Applied Statistics 3 (4): 1309–34.
-
-Bolstad, B. 2004. Low-Level Analysis of High-Density 
-Oligonucleotide Array Data: Background, Normalization and 
-Summarization. University of California, Berkeley.
-
-Breiman, L. 2001b. “Statistical Modeling: The Two 
-Cultures.” Statistical Science 16 (3): 199–231.
-
-Carlson, B. 2012. “Putting Oncology Patients at Risk.” 
-Biotechnology Healthcare 9 (3): 17–21.
-
-Chambers, J. 1998. Programming with Data: A Guide to the 
-S Language. Berlin, Heidelberg: Springer-Verlag.
-
-Cleveland, W. 1979. “Robust Locally Weighted Regression 
-and Smoothing Scatterplots.” Journal of the American 
-Statistical Association 74 (368): 829–36.
-
-Durrleman, S, and R Simon. 1989. “Flexible Regression 
-Models with Cubic Splines.” Statistics in Medicine 8 (5): 
-551–61.
-
-Gentleman, R, V Carey, W Huber, R Irizarry, and S Dudoit. 
-2005. Bioinformatics and Computational Biology Solutions 
-Using R and Bioconductor. Berlin, Heidelberg: 
-Springer-Verlag.
-
-Kuhn, M, and K Johnson. 2020. Feature Engineering and 
-Selection: A Practical Approach for Predictive Models. 
-CRC Press.
-
-R Core Team. 2014. R: A Language and Environment for 
-Statistical Computing. Vienna, Austria: R Foundation for 
-Statistical Computing. http://www.R-project.org/.
-
-Shmueli, G. 2010. “To Explain or to Predict?” Statistical 
-Science 25 (3): 289–310.
-
-Wickham, H, M Averick, J Bryan, W Chang, L McGowan, R 
-François, G Grolemund, et al. 2019. “Welcome to the 
-Tidyverse.” Journal of Open Source Software 4 (43).
-
-Wickham, H, and G Grolemund. 2016. R for Data Science: 
-Import, Tidy, Transform, Visualize, and Model Data. 
-O’Reilly Media, Inc.
