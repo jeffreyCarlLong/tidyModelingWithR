@@ -14,8 +14,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 # install.packages("dplyr")
 # install.packages("rsample")
+# install.packages("ggplot2")
+# install.packages("purrr")
+# install.packages("tidyverse")
+# install.packages("lubridate")
+# install.packages("modeldata")
 library(dplyr)
 library(rsample)
+library(ggplot2)
+library(purrr)
+library(tidyverse)
+library(lubridate)
+library(modeldata)
 ```
 
 
@@ -72,6 +82,10 @@ Statistical Computing. http://www.R-project.org/.
 
 Shmueli, G. 2010. “To Explain or to Predict?” Statistical 
 Science 25 (3): 289–310.
+
+Wickham, H, M Averick, J Bryan, W Chang, L McGowan, R 
+François, G Grolemund, et al. 2019. “Welcome to the 
+Tidyverse.” Journal of Open Source Software 4 (43).
 
 Wickham, H, M Averick, J Bryan, W Chang, L McGowan, R 
 François, G Grolemund, et al. 2019. “Welcome to the 
@@ -838,6 +852,441 @@ boot_samp
 class(boot_samp)
 ```
 
+With this approach, vector-based functions can be used 
+with these columns, such as `vapply()` or `purrr::map()2`. 
+This `boot_samp` object has multiple classes but inherits 
+methods for data frames (`"data.frame"`) and tibbles 
+(`"tbl_df"`). Additionally, new columns can be added to 
+the results without affecting the class of the data. This 
+is much easier and more versatile for users to work with 
+than a completely new object type that does not make its 
+data structure obvious.
 
+One downside to relying on common data structures is the 
+potential loss of computational performance. In some 
+situations, data can be encoded in specialized formats 
+that are more efficient representations of the data. For 
+example:
 
+-    In computational chemistry, the structure-data file 
+format (SDF) is a tool to take chemical structures and 
+encode them in a format that is computationally efficient 
+to work with.
 
+-    Data that have a large number of values that are the 
+same (such as zeros for binary data) can be stored in a 
+_sparse matrix format_. This format can reduce the size of 
+the data as well as enable more efficient computational 
+techniques.
+
+These formats are advantageous when the problem is well 
+scoped and the potential data processing methods are both 
+well defined and suited to such a format3. However, once 
+such constraints are violated, specialized data formats 
+are less useful. For example, if we perform a 
+transformation of the data that converts the data into 
+fractional numbers, the output is no longer sparse; the 
+sparse matrix representation is helpful for one specific 
+algorithmic step in modeling but this is often not true 
+before or after that specific step.
+
+|   A specialized data structure is not flexible enough 
+|   for an entire modeling workflow in the way that a 
+|   common data structure is.
+
+One important feature in the tibble produced by `rsample` 
+is that the `splits` column is a list. In this instance, 
+each element of the list has the same type of object: an 
+`rsplit` object that contains the information about which 
+rows of `mtcars` belong in the bootstrap sample. List 
+columns can be very useful in data analysis and, as will 
+be seen throughout this book, are important to tidymodels.
+
+#### Design for the pipe and functional programming
+
+The `magrittr` pipe operator (`%>%`) is a tool for 
+chaining together a sequence of R functions. To 
+demonstrate, consider the following commands which sort a 
+data frame and then retain the first 10 rows:
+
+```{r}
+small_mtcars <- arrange(mtcars, gear)
+small_mtcars <- slice(small_mtcars, 1:10)
+
+# or more compactly: 
+small_mtcars <- slice(arrange(mtcars, gear), 1:10)
+```
+
+The pipe operator substitutes the value of the left-hand 
+side of the operator as the first argument to the 
+right-hand side, so we can implement the same result as 
+above with:
+
+```{r}
+small_mtcars <- 
+  mtcars %>% 
+  arrange(gear) %>% 
+  slice(1:10)
+```
+
+The piped version of this sequence is more readable; this 
+readability increases as more operations are added to a 
+sequence. This approach to programming works in this 
+example because all of the functions we used return the 
+same data structure (a data frame) that is then the first 
+argument to the next function. This is by design. When 
+possible, create functions that can be incorporated into a 
+pipeline of operations.
+
+If you have used `ggplot2`, this is not unlike the 
+layering of plot components into a `ggplot` object with 
+the `+` operator. To make a scatter plot with a regression 
+line, the initial `ggplot()` call is augmented with two 
+additional operations:
+
+```{r}
+ggplot(mtcars, aes(x = wt, y = mpg)) +
+  geom_point() + 
+  geom_smooth(method = lm)
+```
+
+While similar to the `dplyr` pipeline, note that the first 
+argument to this pipeline is a data set (`mtcars`) and 
+that each function call returns a `ggplot` object. Not all 
+pipelines need to keep the returned values (plot objects) 
+the same as the initial value (a data frame). Using the 
+pipe operator with `dplyr` operations has acclimated many 
+R users to expect to return a data frame when pipelines 
+are used; as shown with `ggplot2`, this does not need to 
+be the case. Pipelines are incredibly useful in modeling 
+workflows but modeling pipelines can return, instead of a 
+data frame, objects such as model components.
+
+R has excellent tools for creating, changing, and 
+operating on functions, making it a great language for 
+_functional programming_. This approach can replace 
+iterative loops in many situations, such as when a 
+function returns a value without other side effects.
+
+Let’s look at an example. Suppose you are interested in 
+the logarithm of the ratio of the fuel efficiency to the 
+car weight. To those new to R and/or coming from other 
+programming languages, a loop might seem like a good 
+option:
+
+```{r}
+n <- nrow(mtcars)
+ratios <- rep(NA_real_, n)
+for (car in 1:n) {
+  ratios[car] <- log(mtcars$mpg[car]/mtcars$wt[car])
+}
+head(ratios)
+```
+
+Those with more experience in R may know that there is a 
+much simpler and faster _vectorized version_ that can be 
+computed by:
+
+```{r}
+ratios <- log(mtcars$mpg/mtcars$wt)
+```
+
+However, in many real-world cases, the element-wise 
+operation of interest is too complex for a vectorized 
+solution. In such a case, a good approach is to write a 
+_function_ to do the computations. When we design for 
+functional programming, it is important that the output 
+only depends on the inputs and that the function has no 
+side effects. Violations of these ideas in the following 
+function are shown with comments:
+
+```{r}
+compute_log_ratio <- function(mpg, wt) {
+  log_base <- getOption("log_base", default = exp(1)) # gets external data
+  results <- log(mpg/wt, base = log_base)
+  print(mean(results))                                # prints to the console
+  done <<- TRUE                                       # sets external data
+  results
+}
+```
+
+A better version would be:
+
+```{r}
+compute_log_ratio <- function(mpg, wt, log_base = exp(1)) {
+  log(mpg/wt, base = log_base)
+}
+```
+
+The `purrr` package contains tools for functional 
+programming. Let’s focus on the `map()` family of 
+functions, which operates on vectors and always returns 
+the same type of output. The most basic function, `map()`, 
+always returns a list and uses the basic syntax of 
+`map(vector, function)`. For example, to take the 
+square-root of our data, we could:
+
+```{r}
+map(head(mtcars$mpg, 3), sqrt)
+```
+
+There are specialized variants of `map()` that return 
+values when we know or expect that the function will 
+generate one of the basic vector types. For example, since 
+the square-root returns a double-precision number:
+
+```{r}
+map_dbl(head(mtcars$mpg, 3), sqrt)
+```
+
+There are also mapping functions that operate across 
+multiple vectors:
+
+```{r}
+ratios <- map2_dbl(mtcars$mpg, mtcars$wt, 
+                   compute_log_ratio)
+head(ratios)
+```
+
+The `map()` functions also allow for temporary, anonymous 
+functions defined using the tilde character. The argument 
+values are `.x` and `.y` for `map2()`:
+
+```{r}
+map2_dbl(mtcars$mpg, mtcars$wt, ~ log(.x/.y)) %>% 
+  head()
+```
+
+These examples have been trivial but, in later sections, 
+are applied to more complex problems.
+
+|   For functional programming in tidy modeling, 
+|   functions should be defined so that functions 
+|   like `map()` can be used for iterative 
+|   computations.
+
+### Examples of tidyverse syntax
+
+Before diving into examples, let’s discuss how the 
+tidyverse relies on a type of data frame called a 
+“tibble”. Tibbles have slightly different rules than basic 
+data frames in R. For example, tibbles naturally work with 
+column names that are not syntactically valid variable 
+names:
+
+```{r}
+# Wants valid names:
+data.frame(`variable 1` = 1:2, two = 3:4)
+# But can be coerced to use them with an extra option:
+df <- data.frame(`variable 1` = 1:2, two = 3:4, 
+                 check.names = FALSE)
+df
+# But tibbles just work:
+tbbl <- tibble(`variable 1` = 1:2, two = 3:4)
+tbbl
+```
+
+Standard data frames enable _partial matching_ of 
+arguments so that code using only a portion of the column 
+names still work. Tibbles prevent this from happening 
+since it can lead to accidental errors.
+
+```{r}
+df$tw
+tbbl$tw
+```
+
+Tibbles also prevent one of the most common R errors: 
+dropping dimensions. If a standard data frame subsets the 
+columns down to a single column, the object is converted 
+to a vector. Tibbles _never_ do this:
+
+```{r}
+df[, "two"]
+tbbl[, "two"]
+```
+
+There are various other advantages to using tibbles 
+instead of data frames, such as better printing and more. 
+Chapter 10 of Wickham and Grolemund (2016) has more 
+details on tibbles.
+
+To demonstrate some syntax, let’s use tidyverse functions 
+to read in data that could be used in modeling. The data 
+set comes from the city of Chicago’s data portal and 
+contains daily ridership data for the city’s elevated 
+train stations. The data set has columns for:
+
+-    the station identifier (numeric),
+-    the station name (character),
+-    the date (character in `mm/dd/yyyy` format),
+-    the day of the week (character), and
+-    the number of riders (numeric).
+
+Our tidyverse pipeline will conduct the following tasks, 
+in order:
+
+1.    We will use the tidyverse package `readr` to read the data from the source website and convert them into a tibble. To do this, the `read_csv()` function can determine the type of data by reading an initial number of rows. Alternatively, if the column names and types are already known, a column specification can be created in R and passed to `read_csv()`.
+
+2.    We filter the data to eliminate a few columns that are not needed (such as the station ID) and change the column `stationname` to `station`. The function `select()` is used for this. When filtering, use either the names of the column names or a `dplyr` selector function. When selecting names, a new variable name can be declared using the argument format `new_name` = `old_name`.
+
+3.    The date field is converted to the R date format using the `mdy()` function from the `lubridate` package. We also convert the ridership numbers to thousands. Both of these computations are executed using the `dplyr::mutate()` function.
+
+4.    There are a small number of days that have replicate ridership numbers at certain stations. To mitigate this issue, we use the maximum number of rides for each station and day combination. We group the ridership data by station and day, and then _summarize_ within each of the 1999 unique combinations with the maximum statistic.
+
+The tidyverse code for these steps is:
+
+```{r}
+library(tidyverse)
+library(lubridate)
+
+url <- "http://bit.ly/raw-train-data-csv"
+
+all_stations <- 
+  # Step 1: Read in the data.
+  read_csv(url) %>% 
+  # Step 2: filter columns and rename stationname
+  dplyr::select(station = stationname, date, rides) %>% 
+  # Step 3: Convert the character date field to a date encoding.
+  # Also, put the data in units of 1K rides
+  mutate(date = mdy(date), rides = rides / 1000) %>% 
+  # Step 4: Summarize the multiple records using the maximum.
+  group_by(date, station) %>% 
+  summarize(rides = max(rides), .groups = "drop")
+```
+
+This pipeline of operations illustrates why the tidyverse 
+is popular. A series of data manipulations is used that 
+have simple and easy to understand user interfaces; the 
+series is bundled together in a streamlined and readable 
+way. The focus is on how the user interacts with the 
+software. This approach enables more people to learn R and 
+achieve their analysis goals, and adopting these same 
+principles for modeling in R has the same benefits.
+
+### Chapter Summary
+
+This chapter introduced the tidyverse, with a focus on 
+applications for modeling. We described differences in 
+conventions between the tidyverse and base R, and 
+introduced two important components of the tidyverse 
+system, tibbles and the pipe operator `%>%`. Data cleaning 
+and processing can feel mundane at times, but these tasks 
+are important for modeling in the real world; we 
+illustrated how to use tibbles, the pipe, and tidyverse 
+functions in an example data import and processing 
+exercise.
+
+## A Review of R Modeling Fundamentals
+
+This book is about creating models with R. Before 
+describing how to apply tidy data principles, let’s review 
+how models are created, trained, and used in the core R 
+language (often called “base R”). This chapter is a brief 
+illustration of core language conventions. It is not 
+exhaustive but provides readers (especially those new to 
+R) the basic, most commonly used motifs.
+
+The S language, on which R is based, has had a rich data 
+analysis environment since the publication of Chambers and 
+Hastie (1992) (commonly known as The White Book). This 
+version of S introduced standard infrastructure components 
+familiar to R users today, such as symbolic model 
+formulae, model matrices, and data frames, as well as 
+standard object-oriented programming methods for data 
+analysis. These user-interfaces have not substantively 
+changed since then.
+
+### An Example
+
+To demonstrate these fundamentals, let’s use experimental data from McDonald (2009), by way of Mangiafico (2015), on the relationship between the ambient temperature and the rate of cricket chirps per minute. Data were collected for two species: _O. exclamationis_ and _O. niveus_. The data are contained in a data frame called `crickets` with a total of 31 data points. These data are shown here in a `ggplot2` graph.
+
+```{r}
+library(tidyverse)
+# Error: package cricketr; actually modeldata
+
+data(crickets, package = "modeldata")
+names(crickets)
+
+# Plot the temperature on the x-axis, the chirp rate on 
+# the y-axis. The plot elements will be colored 
+# differently for each species:
+ggplot(crickets, aes(x = temp, y = rate, col = species)) + 
+  # Plot points for each data point and color by species
+  geom_point() + 
+  # Show a simple linear model fit created separately for 
+  # each species:
+  geom_smooth(method = lm, se = FALSE) + 
+  labs(x = "Temperature (C)", 
+       y = "Chirp Rate (per minute)")
+```
+
+The data exhibit fairly linear trends for each species. 
+For a given temperature, _O. exclamationis_ appears to 
+chirp more per minute than the other species. For an 
+inferential model, the researchers might have specified 
+the following null hypotheses prior to seeing the data:
+
+-    Temperature has no effect on the chirp rate.
+
+-    There are no differences between the species’ chirp 
+rate.
+
+There may be some scientific or practical value in 
+predicting the chirp rate but in this example we will 
+focus on inference.
+
+To fit an ordinary linear model in R, the `lm()` function 
+is commonly used. The important arguments to this function 
+are a model formula and a data frame that contains the 
+data. The formula is `symbolic`. For example, the simple 
+formula:
+
+```{r}
+rate ~ temp
+```
+
+specifies that the chirp rate is the outcome (since it is 
+on the left-hand side of the tilde `~`) and that the 
+temperature value is the predictor. Suppose the data 
+contained the time of day in which the measurements were 
+obtained in a column called `time`. The formula:
+
+```{r}
+rate ~ temp + time
+```
+
+would not add the time and temperature values together. 
+This formula would symbolically represent that temperature 
+and time should be added as separate main effects to the 
+model. A main effect is a model term that contains a 
+single predictor variable.
+
+There are no time measurements in these data but the 
+species can be added to the model in the same way:
+
+```{r}
+rate ~ temp + species
+```
+
+Species is not a quantitative variable; in the data frame, 
+it is represented as a factor column with levels 
+`"O. exclamationis"` and `"O. niveus"`. The vast majority 
+of model functions cannot operate on non-numeric data. For 
+species, the model needs to _encode_ the species data in a 
+numeric format. The most common approach is to use 
+indicator variables (also known as “dummy variables”) in 
+place of the original qualitative values. In this 
+instance, since species has two possible values, the model 
+formula will automatically encode this column as numeric 
+by adding a new column that has a value of zero when the 
+species is `"O. exclamationis"` and a value of one when 
+the data correspond to `"O. niveus"`. The underlying 
+formula machinery automatically converts these values for 
+the data set used to create the model, as well as for any 
+new data points (for example, when the model is used for 
+prediction).
+
+Suppose there were five species instead of two. The model formula would automatically add four additional binary columns that are binary indicators for four of the species. The reference level of the factor (i.e., the first level) is always left out of the predictor set. The idea is that, if you know the values of the four indicator variables, the value of the species can be determined. We discuss binary indicator variables in more detail in Section 8.4.1.
+
+The model formula shown above creates a model with different y-intercepts for each species; the slopes of the regression lines could be different for each species as well. To accommodate this structure, an interaction term can be added to the model. This can be specified in a few different ways, and the most basic uses the colon:
