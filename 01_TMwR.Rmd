@@ -631,6 +631,77 @@ details on the process of creating a good model. This
 includes creating good estimates of performance as well as 
 tuning model parameters.
 
+## A tidyverse primer
+
+The tidyverse is a collection of R packages for data 
+analysis that are developed with common ideas and norms. 
+From Wickham et al. (2019):
+
+|   “At a high level, the tidyverse is a language for 
+|   solving data science challenges with R code. Its 
+|   primary goal is to facilitate a conversation between 
+|   a human and a computer about data. Less abstractly, 
+|   the tidyverse is a collection of R packages that 
+|   share a high-level design philosophy and low-level 
+|   grammar and data structures, so that learning one 
+|   package makes it easier to learn the next.”
+
+### Principles
+
+The full set of strategies and tactics for writing R code 
+in the tidyverse style can be found at the website 
+[https://design.tidyverse.org](https://design.tidyverse.org). 
+Here we can briefly describe several of the design 
+principles, their motivation, and how we think about 
+modeling as an application of these principles.
+
+#### Design for Humans
+
+The tidyverse focuses on designing R packages and 
+functions that can be easily understood and used by a 
+broad range of people. Both historically and today, a 
+substantial percentage of R users are not people who 
+create software or tools but instead people who create 
+analyses or models. As such, R users do not typically have 
+(or need) computer science backgrounds, and many are not 
+interested in writing their own R packages.
+
+For this reason, it is critical that R code be easy to 
+work with to accomplish your goals. Documentation, 
+training, accessibility, and other factors play an 
+important part in achieving this. However, if the syntax 
+itself is difficult for people to easily comprehend, 
+documentation is a poor solution. The software itself must 
+be intuitive.
+
+To contrast the tidyverse approach with more traditional R 
+semantics, consider sorting a data frame. Using only the 
+core language, we can sort a data frame using one or more 
+columns by reordering the rows via R’s subscripting rules 
+in conjunction with `order()`; you cannot successfully use 
+a function you might be tempted to try in such a situation 
+because of its name, `sort()`. To sort the `mtcars` data 
+by two of its columns, the call might look like:
+
+```{r}
+mtcars[order(mtcars$gear, mtcars$mpg), ]
+```
+
+While very computationally efficient, it would be 
+difficult to argue that this is an intuitive user 
+interface. In dplyr by contrast, the tidyverse function 
+`arrange()` takes a set of variable names as input 
+arguments directly:
+
+```{r}
+
+```
+
+
+
+
+
+
 
 
 
