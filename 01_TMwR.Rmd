@@ -1287,6 +1287,42 @@ the data set used to create the model, as well as for any
 new data points (for example, when the model is used for 
 prediction).
 
-Suppose there were five species instead of two. The model formula would automatically add four additional binary columns that are binary indicators for four of the species. The reference level of the factor (i.e., the first level) is always left out of the predictor set. The idea is that, if you know the values of the four indicator variables, the value of the species can be determined. We discuss binary indicator variables in more detail in Section 8.4.1.
+|   Suppose there were five species instead of two. The 
+|   model formula would automatically add four additional 
+|   binary columns that are binary indicators for four of 
+|   the species. The reference level of the factor (i.e., 
+|   the first level) is always left out of the predictor 
+|   set. The idea is that, if you know the values of the 
+|   four indicator variables, the value of the species can 
+|   be determined. We discuss binary indicator variables 
+|   in more detail in Section 8.4.1.
 
-The model formula shown above creates a model with different y-intercepts for each species; the slopes of the regression lines could be different for each species as well. To accommodate this structure, an interaction term can be added to the model. This can be specified in a few different ways, and the most basic uses the colon:
+The model formula shown above creates a model with 
+different y-intercepts for each species; the slopes of the 
+regression lines could be different for each species as 
+well. To accommodate this structure, an interaction term 
+can be added to the model. This can be specified in a few 
+different ways, and the most basic uses the colon:
+
+```{r}
+rate ~ temp + species + temp:species
+
+# A shortcut can be used to expand all interactions containing
+# interactions with two variables:
+rate ~ (temp + species)^2
+
+# Another shortcut to expand factors to include all possible
+# interactions (equivalent for this example):
+rate ~ temp * species
+```
+
+In addition to the convenience of automatically creating indicator variables, the formula offers a few other niceties:
+
+-    In-line functions can be used in the formula. For example, to use the natural log of the temperature, we can create the formula rate ~ log(temp). Since the formula is symbolic by default, literal math can also be applied to the predictors using the identity function I(). To use Fahrenheit units, the formula could be rate ~ I( (temp * 9/5) + 32 ) to convert from Celsius.
+
+-    R has many functions that are useful inside of formulas. For example, poly(x, 3) creates linear, quadratic, and cubic terms for x to the model as main effects. The splines package also has several functions to create nonlinear spline terms in the formula.
+
+-    For data sets where there are many predictors, the period shortcut is available. The period represents main effects for all of the columns that are not on the left-hand side of the tilde. Using ~ (.)^3 would create main effects as well as all two- and three-variable interactions to the model.
+
+Returning to our chirping crickets, let’s use a two-way interaction model. In this book, we use the suffix _fit for R objects that are fitted models.
+
