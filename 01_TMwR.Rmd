@@ -72,6 +72,10 @@ Cleveland, W. 1979. “Robust Locally Weighted Regression
 and Smoothing Scatterplots.” Journal of the American 
 Statistical Association 74 (368): 829–36.
 
+De Cock, D. 2011. “Ames, Iowa: Alternative to the Boston 
+Housing Data as an End of Semester Regression Project.” 
+Journal of Statistics Education 19 (3).
+
 Durrleman, S, and R Simon. 1989. “Flexible Regression 
 Models with Cubic Splines.” Statistics in Medicine 8 (5): 
 551–61.
@@ -1878,7 +1882,10 @@ pool, porch, etc.),
 The raw data are provided by the authors, but in our 
 analyses in this book, we use a transformed version 
 available in the `modeldata` package. This version has 
-several changes and improvements to the data. For example, 
+several changes and improvements to the data. 
+The 
+[script for data cleaning can be found on GitHub](https://github.com/topepo/AmesHousing/blob/master/R/make_ames.R). 
+For example, 
 the longitude and latitude values have been determined for 
 each property. Also, some columns were modified to be more 
 analysis ready. For example:
@@ -1979,6 +1986,86 @@ use both together to plot the data on a map and color by
 neighborhood:
 
 
+![Figure 4.1: Neighborhoods in Ames IA](images/ames.png)
+
+We can see a few noticeable patterns. First, there is a 
+void of data points in the center of Ames. This 
+corresponds to Iowa State University. Second, while there 
+are a number of neighborhoods that are geographically 
+isolated, there are others that are adjacent to each 
+other. For example, Timberland is located apart from 
+almost all other neighborhoods:
+
+![](images/timberland.png)
+
+The Meadow Village neighborhood in Southwest Ames is like 
+an island of properties ensconced inside the sea of 
+properties that make up the Mitchell neighborhood:
+
+![](images/mitchell.png)
+
+A detailed inspection of the map also shows that the 
+neighborhood labels are not completely reliable. For 
+example, there are some properties labeled as being in 
+Northridge that are surrounded by houses in the adjacent 
+Somerset neighborhood:
+
+![](images/northridge.png)
+
+Also, there are ten isolated houses labeled as being in 
+Crawford but are not close to the majority of the other 
+houses in that neighborhood:
+
+![](images/crawford.png)
+
+Also notable is the “Iowa Department of Transportation 
+(DOT) and Rail Road” neighborhood adjacent to the main 
+road on the east side of Ames. There are several clusters 
+of houses within this neighborhood as well as some 
+longitudinal outliers; the two houses furthest east are 
+isolated from the other locations.
+
+![](images/dot_rr.png)
+
+As previously described in Chapter 1, it is critical to 
+conduct exploratory data analysis prior to beginning any 
+modeling. These housing data have characteristics that 
+present interesting challenges about how the data should 
+be processed and modeled. We describe many of these in 
+later chapters. Some basic questions that could be 
+examined include:
+
+-    Are there any odd or noticeable things about the 
+distributions of the individual predictors? Is there much 
+skewness or any pathological distributions?
+
+-    Are there high correlations between predictors? For 
+example, there are multiple predictors related to the size 
+of the house. Are some redundant?
+
+-    Are there associations between predictors and the 
+outcomes?
+
+Many of these questions will be revisited as these data 
+are used in upcoming examples.
+
+### 4.2 Chapter summary
+
+This chapter introduced a data set used in later chapters 
+to demonstrate tidymodels syntax and investigated some of 
+its characteristics. Exploratory data analysis like this 
+is an essential component of any modeling project; EDA 
+uncovers information that contributes to better modeling 
+practice.
+
+The important code that we will carry forward into 
+subsequent chapters is:
+
+```{r}
+library(tidymodels)
+data(ames)
+ames <- ames %>% mutate(Sale_Price = log10(Sale_Price))
+```
 
 
 
