@@ -2135,6 +2135,116 @@ be placed into training. Using the previous data frame
 produced by the code snippet from the summary in Chapter 
 4:
 
+```{r}
+library(tidymodels)
+tidymodels_prefer()
+
+# Set the random number stream using `set.seed()` so that the results can be 
+# reproduced later. 
+set.seed(123)
+
+# Save the split information for an 80/20 split of the data
+ames_split <- initial_split(ames, prop = 0.80)
+ames_split
+```
+
+The printed information denotes the amount of data in the 
+training set ( _n_ =2,344), the amount in the test set ( 
+_n_ =586), and the size of the original pool of samples ( 
+_n_ =2,930).
+
+The object `ames_split` is an `rsplit` object and only 
+contains the partitioning information; to get the 
+resulting data sets, we apply two more functions:
+
+```{r}
+ames_train <- training(ames_split)
+ames_test  <-  testing(ames_split)
+
+dim(ames_train)
+```
+
+These objects are data frames with the same columns as the 
+original data but only the appropriate _rows_ for each 
+set.
+
+Simple random sampling is appropriate in many cases but 
+there are exceptions. When there is a dramatic 
+_class imbalance_ in classification problems, one class 
+occurs much less frequently than another. Using a simple 
+random sample may haphazardly allocate these infrequent 
+samples disproportionately into the training or test set. 
+To avoid this, _stratified sampling_ can be used. The 
+training/test split is conducted separately within each 
+class and then these subsamples are combined into the 
+overall training and test set. For regression problems, 
+the outcome data can be artificially binned into 
+_quartiles_ and then stratified sampling conducted four 
+separate times. This is an effective method for keeping 
+the distributions of the outcome similar between the 
+training and test set.
+
+![The distribution of the sale price (in log units) for the Ames housing data. The vertical lines indicate the quartiles of the data.](images/ames-sale-price-1.svg)
+
+The distribution of the sale price outcome for the Ames 
+housing data is shown in Figure 5.1. As previously 
+discussed, the sale price distribution is right-skewed, 
+with proportionally more inexpensive houses than expensive 
+houses on either side of the center of the distribution. 
+The worry here is that the more expensive houses would not 
+be represented in the training set well with simple 
+splitting; this would increase the risk that our model 
+would be ineffective at predicting the price for such 
+properties. The dotted vertical lines in Figure 5.1 
+indicate the four quartiles for these data. A stratified 
+random sample would conduct the 80/20 split within each of 
+these data subsets and then pool the results together. In 
+`rsample`, this is achieved using the `strata` argument:
+
+```{r}
+set.seed(123)
+ames_split <- initial_split(ames, prop = 0.80, strata = Sale_Price)
+ames_train <- training(ames_split)
+ames_test  <-  testing(ames_split)
+
+dim(ames_train)
+```
+
+Only a single column can be used for stratification.
+
+|   There is very little downside to using stratified 
+|   sampling.
+
+Are there situations when random sampling is not the best 
+choice? One case is when the data have a significant 
+_time_ component, such as time series data. Here, it is 
+more common to use the most recent data as the test set. 
+The `rsample` package contains a function called 
+`initial_time_split()` that is very similar to 
+`initial_split()`. Instead of using random sampling, the 
+`prop` argument denotes what proportion of the first part 
+of the data should be used as the training set; the 
+function assumes that the data have been pre-sorted in an 
+appropriate order.
+
+### What Proportion Should Be Used?
+
+The proportion of data that should be allocated for splitting is highly dependent on the context of the problem at hand. Too little data in the training set hampers the model’s ability to find appropriate parameter estimates. Conversely, too little data in the test set lowers the quality of the performance estimates. There are parts of the statistics community that eschew test sets in general because they believe all of the data should be used for parameter estimation. While there is merit to this argument, it is good modeling practice to have an unbiased set of observations as the final arbiter of model quality. A test set should be avoided only when the data are pathologically small.
+
+### What About A Validation Set?
+
+Previously, when describing the goals of data splitting, we singled out the test set as the data that should be used to conduct a proper evaluation of model performance on the final model(s). This begs the question of, “How can we tell what is best if we don’t measure performance until the test set?”
+
+It is common to hear about validation sets as an answer to this question, especially in the neural network and deep learning literature. The validation set was originally defined in the early days of neural networks when researchers realized that measuring performance by re-predicting the training set samples led to results that were overly optimistic (significantly, unrealistically so). This led to models that overfit, meaning that they performed very well on the training set but poorly on the test set9. To combat this issue, a small validation set of data were held back and used to measure performance as the network was trained. Once the validation set error rate began to rise, the training would be halted. In other words, the validation set was a means to get a rough sense of how well the model performed prior to the test set.
+
+|   It is largely semantics as to whether validation sets 
+|   are a subset of the training set or a third allocation 
+|   in the initial split of the data.
+
+Validation sets are discussed more in Section 10.2.2 as a special case of _resampling_ methods that are used on the training set.
+
+
+
 
 
 
