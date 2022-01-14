@@ -2386,8 +2386,199 @@ ames_test  <-  testing(ames_split)
 
 ## Chapter 6 Fitting Models with parsnip
 
-The `parsnip` package provides a fluent and standardized interface for a variety of different models. In this chapter, we both give some motivation for why a common interface is beneficial and show how to use the package.
+The `parsnip` package provides a fluent and standardized 
+interface for a variety of different models. In this 
+chapter, we both give some motivation for why a common 
+interface is beneficial and show how to use the package.
 
-In this chapter, we focus on how to `fit()` and `predict()` directly with a `parsnip` object. This may be a good fit for some straightforward modeling problems, but the next chapter illustrates a better approach to these tasks by combining models and preprocessors together into something called a `workflow` object.
+In this chapter, we focus on how to `fit()` and 
+`predict()` directly with a `parsnip` object. This may be 
+a good fit for some straightforward modeling problems, but 
+the next chapter illustrates a better approach to these 
+tasks by combining models and preprocessors together into 
+something called a `workflow` object.
 
 ###  Create a Model
+
+Once the data have been encoded in a format ready for a 
+modeling algorithm, such as a numeric matrix, they can be 
+used in the model building process.
+
+Suppose that a linear regression model was our initial 
+choice for the model. This is equivalent to specifying 
+that the outcome data is numeric and that the predictors 
+are related to the outcome in terms of simple slopes and 
+intercepts:
+
+$ y_i = β_0 + β_1x_{1i} + … + β_px_{pi} $
+
+There are a variety of methods that can be used to 
+estimate the model parameters:
+
+-    _Ordinary linear regression_ uses the traditional 
+method of least squares to solve for the model parameters.
+
+-    _Regularized linear regression_ adds a penalty to the 
+least squares method to encourage simplicity by removing 
+predictors and/or shrinking their coefficients towards 
+zero. This can be executed using Bayesian or non-Bayesian 
+techniques.
+
+In R, the _stats_ package can be used for the first case. 
+The syntax for `lm()` is
+
+`model <- lm(formula, data, ...)`
+
+where `...` symbolizes other options to pass to `lm()`. 
+The function does not have an `x/y` interface, where we 
+might pass in our outcome as `y` and our predictors as 
+`x`.
+
+To estimate with regularization, a Bayesian model can be 
+fit using the `rstanarm` package:
+
+`model <- stan_glm(formula, data, family = "gaussian", ...)`
+
+In this case, the other options passed via `...` would 
+include arguments for the `prior distributions` of the 
+parameters as well as specifics about the numerical 
+aspects of the model. As with `lm()`, only the formula 
+interface is available.
+
+A popular non-Bayesian approach to regularized regression 
+is the glmnet model (Friedman, Hastie, and Tibshirani 2010). Its syntax is:
+
+`model <- glmnet(x = matrix, y = vector, family = "gaussian", ...)`
+
+In this case, the predictor data must already be formatted 
+into a numeric matrix; there is only an `x/y` method and 
+no formula method.
+
+Note that these interfaces are heterogeneous in either how 
+the data are passed to the model function or in terms of 
+their arguments. The first issue is that, to fit models 
+across different packages, the data must be formatted in 
+different ways. `lm()` and `stan_glm()` only have formula 
+interfaces while `glmnet()` does not. For other types of 
+models, the interfaces may be even more disparate. For a 
+person trying to do data analysis, these differences 
+require the memorization of each package’s syntax and can 
+be very frustrating.
+
+For tidymodels, the approach to specifying a model is 
+intended to be more unified:
+
+1. Specify the type of model based on its mathematical 
+structure (e.g., linear regression, random forest, 
+K-nearest neighbors, etc).
+
+2. Specify the engine for fitting the model. Most often 
+this reflects the software package that should be used.
+
+3. When required, declare the mode of the model. The mode 
+reflects the type of prediction outcome. For numeric 
+outcomes, the mode is regression; for qualitative 
+outcomes, it is `classification`. If a model can only 
+create one type of model, such as linear regression, the 
+mode is already set.
+
+These specifications are built without referencing the 
+data. For example, for the three cases above:
+
+```{r}
+library(tidymodels)
+tidymodels_prefer()
+linear_reg() %>% set_engine("lm")
+linear_reg() %>% set_engine("glmnet") 
+linear_reg() %>% set_engine("stan")
+```
+
+Once the details of the model have been specified, the 
+model estimation can be done with either the `fit()` 
+function (to use a formula) or the `fit_xy()` function 
+(when your data are already pre-processed). The `parsnip` 
+package allows the user to be indifferent to the interface 
+of the underlying model; you can always use a formula even 
+if the modeling package’s function only has the `x/y` 
+interface.
+
+The `translate()` function can provide details on how 
+parsnip converts the user’s code to the package’s syntax:
+
+```{r}
+linear_reg() %>% set_engine("lm") %>% translate()
+linear_reg(penalty = 1) %>% set_engine("glmnet") %>% 
+  translate()
+linear_reg() %>% set_engine("stan") %>% translate()
+```
+
+Note that `missing_arg()` is just a placeholder for the 
+data that has yet to be provided.
+
+|   Note that we supplied a required `penalty` argument 
+|   for the glmnet engine. Also, for the Stan and glmnet 
+|   engines, the `family` argument was automatically added 
+|   as a default. As will be shown below, this option can 
+|   be changed.
+
+Let’s walk through how to predict the sale price of houses 
+in the Ames data as a function of only longitude and 
+latitude:
+
+```{r}
+lm_model <- 
+  linear_reg() %>% 
+  set_engine("lm")
+
+lm_form_fit <- 
+  lm_model %>% 
+  # Recall that Sale_Price has been pre-logged
+  fit(Sale_Price ~ Longitude + Latitude, 
+      data = ames_train)
+
+lm_xy_fit <- 
+  lm_model %>% 
+  fit_xy(
+    x = ames_train %>% select(Longitude, Latitude),
+    y = ames_train %>% pull(Sale_Price)
+    )
+    
+lm_form_fit
+lm_xy_fit
+```
+
+
+
+|   The differences between `fit()` and `fit_xy()` may not 
+|   be obvious.
+
+|   When `fit()` is used with a model specification, this 
+|   almost always means that dummy variables will be 
+|   created from qualitative predictors. If the underlying 
+|   function requires a matrix (like glmnet), it will make 
+|   them. However, if the underlying function uses a 
+|   formula, `fit()` just passes the formula to that 
+|   function. We estimate that 99% of modeling functions 
+|   using formulas make dummy variables. The other 1% 
+|    include tree-based methods that do not require purely 
+|   numeric predictors.11
+
+|   The `fit_xy()` function always passes the data as-is 
+|   to the underlying model function. It will not create 
+|   dummy variables before doing so.
+
+Not only does `parsnip` enable a consistent 
+_model interface  _ for different packages, it also 
+provides consistency in the _model arguments_. It is 
+common for different functions which fit the same model to 
+have different argument names. Random forest model 
+functions are a good example. Three commonly used 
+arguments are the number of trees in the ensemble, the 
+number of predictors to randomly sample with each split 
+within a tree, and the number of data points required to 
+make a split. For three different R packages implementing 
+this algorithm, those arguments are:
+
+
+
+
