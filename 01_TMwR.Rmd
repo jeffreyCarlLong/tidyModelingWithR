@@ -21,6 +21,10 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("modeldata")
 # install.packages("lattice")
 # install.packages("tidymodels")
+# install.packages("shiny")
+# install.packages("miniUI") 
+# install.packages("rstudioapi")
+# install.packages("baguette")
 
 library(dplyr)
 library(rsample)
@@ -31,7 +35,10 @@ library(lubridate)
 library(modeldata)
 library(lattice)
 library(tidymodels)
-
+library(shiny)
+library(miniUI)
+library(rstudioapi)
+library(baguette)
 ```
 
 
@@ -79,6 +86,11 @@ Journal of Statistics Education 19 (3).
 Durrleman, S, and R Simon. 1989. “Flexible Regression 
 Models with Cubic Splines.” Statistics in Medicine 8 (5): 
 551–61.
+
+Friedman, J, T Hastie, and R Tibshirani. 2010. 
+“Regularization Paths for Generalized Linear Models via 
+Coordinate Descent.” Journal of Statistical Software 33 
+(1): 1.
 
 Gentleman, R, V Carey, W Huber, R Irizarry, and S Dudoit. 
 2005. Bioinformatics and Computational Biology Solutions 
@@ -2769,18 +2781,153 @@ ames_test_small %>%
                     type = "pred_int")) 
 ```
 
-The motivation for the first rule comes from some R packages producing dissimilar data types from prediction functions. For example, the ranger package is an excellent tool for computing random forest models. However, instead of returning a data frame or vector as output, a specialized object is returned that has multiple values embedded within it (including the predicted values). This is just one more step for the data analyst to work around in their scripts. As another example, the glmnet package can return at least four different output types for predictions, depending on the model and characteristics of the data:
+The motivation for the first rule comes from some R 
+packages producing dissimilar data types from prediction 
+functions. For example, the `ranger` package is an 
+excellent tool for computing random forest models. 
+However, instead of returning a data frame or vector as 
+output, a specialized object is returned that has multiple 
+values embedded within it (including the predicted 
+values). This is just one more step for the data analyst 
+to work around in their scripts. As another example, the 
+`glmnet` package can return at least four different output 
+types for predictions, depending on the model and 
+characteristics of the data:
 
+Type of Prediction |	Returns a:
+---------------- | ---------
+numeric |	numeric matrix
+class |	character matrix
+probability (2 classes) |	numeric matrix (2nd level only)
 
+Additionally, the column names of the results contain 
+coded values that map to a vector called `lambda` within 
+the glmnet model object. This excellent statistical method 
+can be discouraging to use in practice because of all of 
+the special cases an analyst might encounter that require 
+additional code to be useful.
 
+For the second tidymodels prediction rule, the predictable 
+column names for different types of predictions are:
+probability (3+ classes) 	3D numeric array (all levels)
 
+type value |	column name(s)
+-------- | -----------------------
+numeric |	.pred
+class |	.pred_class
+prob |	.pred_{class levels}
+conf_int |	.pred_lower, .pred_upper
+pred_int |	.pred_lower, .pred_upper
 
+The third rule regarding the number of rows in the output 
+is critical. For example, if any rows of the new data 
+contain missing values, the output will be padded with 
+missing results for those rows. A main advantage of 
+standardizing the model interface and prediction types in 
+`parsnip` is that, when different models are used, the 
+syntax is identical. Suppose that we used a decision tree 
+to model the Ames data. Outside of the model 
+specification, there are no significant differences in the 
+code pipeline:
 
+```{r}
+tree_model <- 
+  decision_tree(min_n = 2) %>% 
+  set_engine("rpart") %>% 
+  set_mode("regression")
 
+tree_fit <- 
+  tree_model %>% 
+  fit(Sale_Price ~ Longitude + Latitude, 
+      data = ames_train)
 
+ames_test_small %>% 
+  select(Sale_Price) %>% 
+  bind_cols(predict(tree_fit, ames_test_small))
+```
 
+This demonstrates the benefit of homogenizing the data 
+analysis process and syntax across different models. It 
+enables the user to spend their time on the results and 
+interpretation rather than having to focus on the 
+syntactical differences between R packages.
 
+### Parsnip-adjacent packages
 
+The `parsnip` package itself contains interfaces to a 
+number of models. However, for ease of package 
+installation and maintenance, there are other tidymodels 
+packages that have `parsnip` model definitions for other 
+sets of models. The `discrim` package has model 
+definitions for the set of classification techniques 
+called _discriminant analysis_ methods (such as linear or 
+quadratic discriminant analysis). In this way, the package 
+dependencies required for installing `parsnip` are 
+reduced. A list of _all_ of the models that can be used 
+with parsnip (across different packages that are on CRAN) 
+can be found at 
+[tidymodels.org/find](tidymodels.org/find).
+
+### Creating model specifications
+
+It may become tedious to write many model specifications, 
+or to remember how to write the code to generate them. The 
+`parsnip` package includes an 
+[RStudio addin](https://rstudio.github.io/rstudioaddins/) 
+that can help. Either choosing this addin from the 
+_Addins_ toolbar menu or running the code:
+
+```{r}
+parsnip_addin()
+```
+
+will open a window in the Viewer panel of the RStudio IDE 
+with a list of possible models for each model mode. These 
+can be written to the source code panel:
+
+The model list includes models from `parsnip` and `parsnip`-adjacent packages that are on CRAN.
+
+```{r}
+bag_tree_rpart_spec <-
+  baguette::bag_tree() %>%
+  set_engine('rpart') %>%
+  set_mode('regression')
+
+boost_tree_xgboost_spec <-
+  boost_tree() %>%
+  set_engine('xgboost') %>%
+  set_mode('regression')
+
+decision_tree_rpart_spec <-
+  decision_tree() %>%
+  set_engine('rpart') %>%
+  set_mode('regression')
+
+```
+
+### Chapter summary
+
+This chapter introduced the `parsnip` package, which 
+provides a common interface for models across R packages 
+using a standard syntax. The interface and resulting 
+objects have a predictable structure.
+
+The code for modeling the Ames data that we will use 
+moving forward is:
+
+```{r}
+library(tidymodels)
+data(ames)
+ames <- mutate(ames, Sale_Price = log10(Sale_Price))
+
+set.seed(123)
+ames_split <- initial_split(ames, prop = 0.80, 
+                            strata = Sale_Price)
+ames_train <- training(ames_split)
+ames_test  <-  testing(ames_split)
+
+lm_model <- linear_reg() %>% set_engine("lm")
+```
 
 
 
