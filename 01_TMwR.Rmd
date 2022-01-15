@@ -2677,6 +2677,106 @@ class(param_est)
 param_est
 ```
 
+There are a few things to notice about this result. First, 
+the object is a numeric matrix. This data structure was 
+mostly likely chosen since all of the calculated results 
+are numeric and a matrix object is stored more efficiently 
+than a data frame. This choice was probably made in the 
+late 1970’s when computational efficiency was extremely 
+critical. Second, the non-numeric data (the labels for the 
+coefficients) are contained in the row names. Keeping the 
+parameter labels as row names is very consistent with the 
+conventions in the original S language.
+
+A reasonable next step might be to create a visualization 
+of the parameters values. To do this, it would be sensible 
+to convert the parameter matrix to a data frame. We could 
+add the row names as a column so that they can be used in 
+a plot. However, notice that several of the existing 
+matrix column names would not be valid R column names for 
+ordinary data frames (e.g. `"Pr(>|t|)"`). Another 
+complication is the consistency of the column names. For 
+`lm` objects, the column for the test statistic is 
+`"Pr(>|t|)"`, but for other models, a different test might 
+be used and, as a result, the column name would be 
+different (e.g., `"Pr(>|z|)"`) and the type of test would 
+be _encoded in the column name_.
+
+While these additional data formatting steps are not 
+impossible to overcome, they are a hindrance, especially 
+since they might be different for different types of 
+models. The matrix is not a highly reusable data structure 
+mostly because it constrains the data to be of a single 
+type (e.g. numeric). Additionally, keeping some data in 
+the dimension names is also problematic since those data 
+must be extracted to be of general use.
+
+As a solution, the `broom` package has methods to convert 
+many types of model objects to a tidy structure. For 
+example, using the `tidy()` method on the linear model 
+produces:
+
+```{r}
+tidy(lm_form_fit)
+```
+
+The column names are standardized across models and do not 
+contain any additional data (such as the type of 
+statistical test). The data previously contained in the 
+row names are now in a column called `term` and so on. One 
+important principle in the tidymodels ecosystem is that a 
+function should return values that are 
+_predictable, consistent, and unsurprising_.
+
+### Make predictions
+
+Another area where `parsnip` diverges from conventional R 
+modeling functions is the format of values returned from 
+`predict()`. For predictions, `parsnip` always conforms to 
+the following rules:
+
+-    The results are always a tibble.
+-    The column names of the tibble are always 
+predictable.
+-    There are always as many rows in the tibble as there 
+are in the input data set.
+
+For example, when numeric data are predicted:
+
+```{r}
+ames_test_small <- ames_test %>% slice(1:5)
+predict(lm_form_fit, new_data = ames_test_small)
+```
+
+The row order of the predictions are always the same as 
+the original data.
+
+|   Why are there leading dot in some of the column names? 
+|   Some tidyverse and tidymodels arguments and return 
+|   values contain periods. This is to protect against 
+|   merging data with duplicate names. There are some data 
+|   sets that contain predictors named `pred`!
+
+These three rules make it easier to merge predictions with 
+the original data:
+
+```{r}
+ames_test_small %>% 
+  select(Sale_Price) %>% 
+  bind_cols(predict(lm_form_fit, ames_test_small)) %>% 
+  # Add 95% prediction intervals to the results:
+  bind_cols(predict(lm_form_fit, ames_test_small, 
+                    type = "pred_int")) 
+```
+
+The motivation for the first rule comes from some R packages producing dissimilar data types from prediction functions. For example, the ranger package is an excellent tool for computing random forest models. However, instead of returning a data frame or vector as output, a specialized object is returned that has multiple values embedded within it (including the predicted values). This is just one more step for the data analyst to work around in their scripts. As another example, the glmnet package can return at least four different output types for predictions, depending on the model and characteristics of the data:
+
+
+
+
+
+
+
 
 
 
