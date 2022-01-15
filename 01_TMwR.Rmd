@@ -2561,14 +2561,14 @@ lm_xy_fit
 |   function. We estimate that 99% of modeling functions 
 |   using formulas make dummy variables. The other 1% 
 |    include tree-based methods that do not require purely 
-|   numeric predictors.11
+|   numeric predictors.$^{11}$
 
 |   The `fit_xy()` function always passes the data as-is 
 |   to the underlying model function. It will not create 
 |   dummy variables before doing so.
 
 Not only does `parsnip` enable a consistent 
-_model interface  _ for different packages, it also 
+_model interface_ for different packages, it also 
 provides consistency in the _model arguments_. It is 
 common for different functions which fit the same model to 
 have different argument names. Random forest model 
@@ -2579,6 +2579,21 @@ within a tree, and the number of data points required to
 make a split. For three different R packages implementing 
 this algorithm, those arguments are:
 
+Argument Type | ranger | randomForest | sparklyr
+------------- | ------- | ------------ | --------
+# sampled predictors |	mtry |	mtry |	feature_subset_strategy
+# trees |	num.trees |	ntree |	num_trees
+# data points to split |	min.node.size |	nodesize |	min_instances_per_node
+
+In an effort to make argument specification less painful, 
+`parsnip` uses common argument names within and between 
+packages. For random forests, `parsnip` models use:
+
+Argument Type |	parsnip
+------------- | ---------
+# sampled predictors |	mtry
+# trees |	trees
+# data points to split |	min_n
 
 
 
