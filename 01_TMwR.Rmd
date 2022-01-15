@@ -1159,7 +1159,7 @@ in order:
 
 The tidyverse code for these steps is:
 
-```{r}
+```{r cache=TRUE}
 library(tidyverse)
 library(lubridate)
 
@@ -1629,7 +1629,7 @@ are present while the latter removes the missing data
 prior to calculations by case-wise deletion. From our 
 previous example:
 
-```{r}
+```{r eval=FALSE}
 # Add a missing value to the prediction set
 new_values$temp[1] <- NA
 
