@@ -3446,4 +3446,43 @@ lm_wflow <-
 lm_fit <- fit(lm_wflow, ames_train)
 ```
 
+## Chapter 8: Feature engineering with recipes
 
+Feature engineering encompasses activities that reformat predictor values to make them easier for a model to use effectively. This includes transformations and encodings of the data to best represent their important characteristics. Imagine that you have two predictors in a data set that can be more effectively represented in your model of interest as a ratio; creating a new predictor from the ratio of the original two is a simple example of feature engineering.
+
+Take the location of a house in Ames as a more involved example. There are a variety of ways that this spatial information can be exposed to a model, including neighborhood (a qualitative measure), longitude/latitude, distance to the nearest school or Iowa State University, and so on. When choosing how to encode these data in modeling, we might choose an option we believe is most associated with the outcome. The original format of the data, for example numeric (e.g., distance) versus categorical (e.g., neighborhood), is also a driving factor in feature engineering choices.
+
+There are many other examples of preprocessing to build better features for modeling:
+
+-    Correlation between predictors can be reduced via feature extraction or the removal of some predictors.
+
+-    When some predictors have missing values, they can be imputed using a sub-model.
+
+-    Models that use variance-type measures may benefit from coercing the distribution of some skewed predictors to be symmetric by estimating a transformation.
+
+Feature engineering and data preprocessing can also involve reformatting required by the model. Some models use geometric distance metrics and, consequently, numeric predictors should be centered and scaled so that they are all in the same units. Otherwise, the distance values would be biased by the scale of each column.
+
+Different models have different preprocessing requirements and some, such as tree-based models, require very little preprocessing at all. Appendix A contains a small table of recommended preprocessing techniques for different models.
+
+In this chapter, we introduce the recipes package which you can use to combine different feature engineering and preprocessing tasks into a single object and then apply these transformations to different data sets.
+
+This chapter uses the Ames housing data and the R objects created in the book so far, as summarized in Section 7.7.
+
+### A simple recipe for the Ames housing data
+
+In this section, we will focus on a small subset of the predictors available in the Ames housing data:
+
+-    The neighborhood (qualitative, with 29 neighborhoods in the training set)
+
+-    The gross above-grade living area (continuous, named `Gr_Liv_Area`)
+
+-    The year built (`Year_Built`)
+
+-    The type of building (`Bldg_Type` with values `OneFam` (n=1,924), `TwoFmCon` (n=46), `Duplex` (n=95), `Twnhs` (n=80), and `TwnhsE` (n=197))
+
+Suppose that an initial ordinary linear regression model were fit to these data. Recalling that, in Chapter 4, the sale prices were pre-logged, a standard call to `lm()` might look like:
+
+```{r}
+lm(Sale_Price ~ Neighborhood + log10(Gr_Liv_Area) + 
+     Year_Built + Bldg_Type, data = ames)
+```
