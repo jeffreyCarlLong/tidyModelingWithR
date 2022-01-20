@@ -3377,13 +3377,73 @@ location_models$info[[1]]
 extract_workflow(location_models, id = "coords_lm")
 ```
 
+Workflow sets are mostly designed to work with resampling, 
+which is discussed in Chapter 10. In the object above, the 
+columns option and result must be populated with specific types 
+of objects that result from resampling. We will demonstrate 
+this in more detail in Chapters 11 and 15.
+
+In the meantime, let’s create model fits for each formula and 
+save them in a new column called fit. We’ll use basic `dplyr` 
+and `purrr` operations:
+
+```{r}
+location_models <-
+   location_models %>%
+   mutate(fit = map(info, ~ fit(.x$workflow[[1]], ames_train)))
+location_models
+
+location_models$fit[[1]]
+```
+
+There’s a lot more to workflow sets. Their nuances and 
+advantages won’t be illustrated until Chapter 15.
 
 
+### Future plans
 
+The two types of components in a workflow are preprocessors and 
+models. There are also operations that might occur _after_ the 
+model is fit. An example of such a _post-processor_ would be 
+cutoff selection for two-class problems. Previously in this 
+chapter, we discussed the idea of modifying the cutoff for a 
+two-class problem. In the future, workflows will be able to 
+attach a custom cutoff that is applied to probabilities after 
+the model fit. Other approaches, such as probability 
+calibration, could also be added as post-processors.
 
+### Chapter summary
 
+In this chapter, you learned that the modeling process 
+encompasses more than just estimating the parameters of an 
+algorithm that connects predictors to an outcome. This process 
+also includes preprocessing steps and operations taken after a 
+model is fit. We introduced a concept called a `model workflow` 
+that can capture the important components of the modeling 
+process. Multiple workflows can also be created inside of a 
+`workflow set`.
 
+For the Ames data, the code used in later chapters is:
 
+```{r}
+library(tidymodels)
+data(ames)
 
+ames <- mutate(ames, Sale_Price = log10(Sale_Price))
+
+set.seed(123)
+ames_split <- initial_split(ames, prop = 0.80, strata = Sale_Price)
+ames_train <- training(ames_split)
+ames_test  <-  testing(ames_split)
+
+lm_model <- linear_reg() %>% set_engine("lm")
+
+lm_wflow <- 
+  workflow() %>% 
+  add_model(lm_model) %>% 
+  add_formula(Sale_Price ~ Longitude + Latitude)
+
+lm_fit <- fit(lm_wflow, ames_train)
+```
 
 
