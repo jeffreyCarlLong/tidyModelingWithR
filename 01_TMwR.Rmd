@@ -3611,7 +3611,11 @@ What is the advantage to using a recipe? There are a few, including:
 
 -    All data processing can be captured in a single R object instead of in scripts that are repeated, or even spread across different files.
 
+### Using recipes
 
+As we discussed in Chapter 7, preprocessing choices and feature engineering should typically be considered part of a modeling workflow, not as a separate task. The `workflows` package contains high level functions to handle different types of preprocessors. Our previous workflow (`lm_wflow`) used a simple set of `dplyr` selectors. Instead of that approach, let’s use the `simple_ames` recipe to preprocess data for modeling.
+
+This object can be attached to the workflow:
 
 
 
