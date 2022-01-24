@@ -4326,7 +4326,32 @@ lm_wflow <-
 lm_fit <- fit(lm_wflow, ames_train)
 ```
 
+## Judging model effectiveness
 
+Once we have a model, we need to know how well it works. A 
+quantitative approach for estimating effectiveness allows 
+us to understand the model, to compare different models, 
+or to tweak the model to improve performance. Our focus in 
+tidymodels is on empirical validation; this usually means 
+using data that were not used to create the model as the 
+substrate to measure effectiveness.
+
+|   The best approach to empirical validation involves 
+|   using _resampling_ methods that will be introduced in 
+|   Chapter 10. In this chapter, we will use the test set 
+|   for illustration purposes and to motivate the need for 
+|   empirical validation. Keep in mind that the test set 
+|   can only be used once, as explained in Section 5.1.
+
+The choice of which metrics to examine can be critical. In 
+later chapters, certain model parameters will be 
+empirically optimized and a primary performance metric 
+will be used to choose the best sub-model. Choosing the 
+wrong method can easily result in unintended consequences. 
+For example, two common metrics for regression models are 
+the root mean squared error (RMSE) and the coefficient of 
+determination (a.k.a. $R^2$). The former measures accuracy 
+while the latter measures correlation. These are 
 
 
 
