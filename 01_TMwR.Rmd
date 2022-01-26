@@ -4351,9 +4351,11 @@ wrong method can easily result in unintended consequences.
 For example, two common metrics for regression models are 
 the root mean squared error (RMSE) and the coefficient of 
 determination (a.k.a. $R^2$). The former measures accuracy 
-while the latter measures correlation. These are 
+while the latter measures correlation. These are not 
+necessarily the same thing. This figure demonstrates the 
+difference between the two:
 
-
+![](images/performance-reg-metrics-1.svg)
 
 
 
