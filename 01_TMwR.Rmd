@@ -2884,7 +2884,8 @@ or to remember how to write the code to generate them. The
 that can help. Either choosing this addin from the 
 _Addins_ toolbar menu or running the code:
 
-```{r}
+```{r eval=FALSE}
+# This works like an R Shiny application, very cool.
 parsnip_addin()
 ```
 
@@ -3618,7 +3619,7 @@ As we discussed in Chapter 7, preprocessing choices and feature engineering shou
 
 This object can be attached to the workflow:
 
-```{r}
+```{r eval=FALSE}
 lm_wflow %>% 
   add_recipe(simple_ames)
 ```
@@ -4234,7 +4235,7 @@ To solve this, the `add_role()`, `remove_role()`, and
 the house price data, the street address column could be 
 modified using
 
-```{r}
+```{r eval=FALSE}
 ames_rec %>% update_role(address, 
                          new_role = "street address")
 # Error: Can't subset columns that don't exist.
