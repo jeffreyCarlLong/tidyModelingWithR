@@ -4589,7 +4589,54 @@ a standard argument called `event_level`. The _default_ is
 that the *first* level of the outcome factor is the event 
 of interest.
 
+|   There is some heterogeneity in R functions in this 
+|   regard; some use the first level and others the second 
+|   to denote the event of interest. We consider it more 
+|   intuitive that the first level is the most important. 
+|   The second level logic is borne of encoding the 
+|   outcome as 0/1 (in which case the second value is the 
+|   event) and unfortunately remains in some packages. 
+|   However, tidymodels (along with many other R packages) 
+|   _require_ a categorical outcome to be encoded as a 
+|   factor and, for this reason, the legacy justification 
+|   for the second level as the event becomes irrelevant.
 
+As an example where the second class is the event:
+
+```{r}
+f_meas(two_class_example, truth, predicted, event_level = "second")
+```
+
+In the output above, the `.estimator` value of “binary” indicates that the standard formula for binary classes will be used.
+
+There are numerous classification metrics that use the predicted probabilities as inputs rather than the hard class predictions. For example, the receiver operating characteristic (ROC) curve computes the sensitivity and specificity over a continuum of different event thresholds. The predicted class column is not used. There are two `yardstick` functions for this method: `roc_curve()` computes the data points that make up the ROC curve and `roc_auc()` computes the area under the curve.
+
+The interfaces to these types of metric functions use the `...` argument placeholder to pass in the appropriate class probability column. For two-class problems, the probability column for the event of interest is passed into the function:
+
+```{r}
+two_class_curve <- roc_curve(two_class_example, truth, Class1)
+two_class_curve
+roc_auc(two_class_example, truth, Class1)
+```
+
+The `two_class_curve` object can be used in a `ggplot` 
+call to visualize the curve, as shown in Figure 9.3. There 
+is an `autoplot()` method that will take care of the 
+details:
+
+```{r}
+autoplot(two_class_curve)
+```
+
+There are a number of other functions that use probability 
+estimates, including `gain_curve()`, `lift_curve()`, and 
+`pr_curve()`.
+
+### 9.4 Multi-class classification metrics
+
+What about data with three or more classes? To 
+demonstrate, let’s explore a different example data set 
+that has four classes:
 
 
 
