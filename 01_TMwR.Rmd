@@ -28,6 +28,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("lme4")
 # install.packages("nlme") # Orthodont
 # install.packages("themis")
+# install.packages("C50")
 
 library(dplyr)
 library(rsample)
@@ -41,6 +42,7 @@ library(tidymodels)
 library(shiny)
 library(miniUI)
 library(rstudioapi)
+library(C50)
 library(baguette)
 library(lme4) 
 # library(nlme) # conflicts with lme4
@@ -3371,7 +3373,7 @@ using the `workflow_set()` function. We’ll just use the
 previous linear model specification to demonstrate:
 
 ```{r}
-install.packages("workflowsets")
+# install.packages("workflowsets")
 library(workflowsets)
 location_models <- workflow_set(preproc = location, models = list(lm = lm_model))
 location_models
@@ -4783,7 +4785,75 @@ sometimes different estimators for the statistics.
 
 # Tools for Creating Effective Models
 
-## Resampling for evaluating performance
+
+## 10 Resampling for evaluating performance
+
+Chapter 9 described statistics for measuring model 
+performance, but which data are best used to compute 
+these statistics? Chapter 5 introduced the idea of data 
+spending where the test set was recommended for obtaining 
+an unbiased estimate of performance. However, we usually 
+need to understand the effectiveness of the model 
+_before using_ the test set.
+
+In fact, typically we can’t decide on which final model 
+to take to the test set without making model assessments.
+
+In this chapter, we describe an approach called 
+resampling that can fill this gap. Resampling estimates 
+of performance can generalize to new data. The next 
+chapter complements this one by demonstrating statistical 
+methods that compare resampling results.
+
+To motivate this chapter, the next section demonstrates how naive performance estimates can often fail.
+
+### 10.1 The Resubstitution Approach
+
+Let’s again use the Ames data to demonstrate the concepts 
+in this chapter. Section 8.8 summarizes the current state 
+of our Ames analysis. It includes a recipe object named 
+`ames_rec`, a linear model, and a workflow using that 
+recipe and model called `lm_wflow`. This workflow was fit 
+on the training set, resulting in `lm_fit`.
+
+For a comparison to this linear model, we can also fit a 
+different type of model. _Random forests_ are a tree 
+ensemble method that operate by creating a large number 
+of decision trees from slightly different versions of the 
+training set (Breiman 2001a). This collection of trees 
+makes up the ensemble. When predicting a new sample, each 
+ensemble member makes a separate prediction. These are 
+averaged to create the final ensemble prediction for the 
+new data point.
+
+Random forest models are very powerful and they can 
+emulate the underlying data patterns very closely. While 
+this model can be computationally intensive, it is very 
+low-maintenance; very little preprocessing is required 
+(as documented in Appendix A).
+
+Using the same predictor set as the linear model (without 
+the extra preprocessing steps), we can fit a random 
+forest model to the training set via the `ranger` 
+package. This model requires no preprocessing so a simple 
+formula can be used:
+
+```{r}
+rf_model <- 
+  rand_forest(trees = 1000) %>% 
+  set_engine("ranger") %>% 
+  set_mode("regression")
+
+rf_wflow <- 
+  workflow() %>% 
+  add_formula(
+    Sale_Price ~ Neighborhood + Gr_Liv_Area + Year_Built + Bldg_Type + 
+      Latitude + Longitude) %>% 
+  add_model(rf_model) 
+
+rf_fit <- rf_wflow %>% fit(data = ames_train)
+```
+
 
 
 
