@@ -24,11 +24,13 @@ knitr::opts_chunk$set(echo = TRUE)
 # install.packages("shiny")
 # install.packages("miniUI") 
 # install.packages("rstudioapi")
+# install.packages("C50")
 # install.packages("baguette")
 # install.packages("lme4")
 # install.packages("nlme") # Orthodont
 # install.packages("themis")
-# install.packages("C50")
+# install.packages("ranger")
+
 
 library(dplyr)
 library(rsample)
@@ -48,6 +50,7 @@ library(lme4)
 # library(nlme) # conflicts with lme4
 library(survival)
 library(themis)
+library(ranger)
 ```
 
 
@@ -1243,7 +1246,14 @@ changed since then.
 
 ### An Example
 
-To demonstrate these fundamentals, let’s use experimental data from McDonald (2009), by way of Mangiafico (2015), on the relationship between the ambient temperature and the rate of cricket chirps per minute. Data were collected for two species: _O. exclamationis_ and _O. niveus_. The data are contained in a data frame called `crickets` with a total of 31 data points. These data are shown here in a `ggplot2` graph.
+To demonstrate these fundamentals, let’s use experimental 
+data from McDonald (2009), by way of Mangiafico (2015), on 
+the relationship between the ambient temperature and the 
+rate of cricket chirps per minute. Data were collected for 
+two species: _O. exclamationis_ and _O. niveus_. The data 
+are contained in a data frame called `crickets` with a 
+total of 31 data points. These data are shown here in a 
+`ggplot2` graph.
 
 ```{r}
 library(tidyverse)
@@ -4854,6 +4864,31 @@ rf_wflow <-
 rf_fit <- rf_wflow %>% fit(data = ames_train)
 ```
 
+How should the two models be compared? For demonstration, we will predict the training set to produce what is known as the “apparent error rate” or the “resubstitution error rate”. This function creates predictions and formats the results:
 
+```{r}
+estimate_perf <- function(model, dat) {
+  # Capture the names of the objects used
+  cl <- match.call()
+  obj_name <- as.character(cl$model)
+  data_name <- as.character(cl$dat)
+  data_name <- gsub("ames_", "", data_name)
+  
+  # Estimate these metrics:
+  reg_metrics <- metric_set(rmse, rsq)
+  
+  model %>% 
+    predict(dat) %>% 
+    bind_cols(dat %>% select(Sale_Price)) %>% 
+    reg_metrics(Sale_Price, .pred) %>% 
+    select(-.estimator) %>% 
+    mutate(object = obj_name, data = data_name)
+}
+```
 
+Both RMSE and R2 are computed. The resubstitution statistics are:
 
+```{r}
+estimate_perf(rf_fit, ames_train)
+estimate_perf(lm_fit, ames_train)
+```
