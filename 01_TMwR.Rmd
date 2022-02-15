@@ -4892,3 +4892,50 @@ Both RMSE and R2 are computed. The resubstitution statistics are:
 estimate_perf(rf_fit, ames_train)
 estimate_perf(lm_fit, ames_train)
 ```
+
+Based on these results, the random forest is much more capable of predicting the sale prices; the RMSE estimate is 2.06-fold better than linear regression. If these two models were under consideration for this prediction problem, the random forest would probably be chosen. The next step applies the random forest model to the test set for final verification:
+
+```{r}
+estimate_perf(rf_fit, ames_test)
+```
+
+The test set RMSE estimate, 0.0695, is much worse than the training set value of 0.0364! Why did this happen?
+
+Many predictive models are capable of learning complex trends from the data. In statistics, these are commonly referred to as low bias models.
+
+In this context, bias is the difference between the true data pattern and the types of patterns that the model can emulate. Many black-box machine learning models have low bias. Other models (such as linear/logistic regression, discriminant analysis, and others) are not as adaptable and are considered high-bias models. See Section 1.2.5 of M. Kuhn and Johnson (2020) for a discussion.
+
+For a low-bias model, the high degree of predictive capacity can sometimes result in the model nearly memorizing the training set data. As an obvious example, consider a 1-nearest neighbor model. It will always provide perfect predictions for the training set no matter how well it truly works for other data sets. Random forest models are similar; re-predicting the training set will always result in an artificially optimistic estimate of performance.
+
+For both models, Table 10.1 summarizes the RMSE estimate for the training and test sets:
+
+
+#### Performance statistics for training and test sets
+
+   | RMSE | Estimates
+------- | ------ | --------
+object |	train |	test
+lm_fit |	0.0751 |	0.0754
+rf_fit |	0.0364 |	0.0695 
+
+Notice that the linear regression model is consistent between training and testing, because of its limited complexity14.
+
+The main take-away from this example is that re-predicting the training set is a *bad idea* for most models.
+
+If the test set should not be used immediately, and re-predicting the training set is a bad idea, what should be done? Resampling methods, such as cross-validation or validation sets, are the solution.
+
+## 10.2 Resampling methods
+
+Resampling methods are empirical simulation systems that emulate the process of using some data for modeling and different data for evaluation. Most resampling methods are iterative, meaning that this process is repeated multiple times. The diagram in Figure 10.1 illustrates how resampling methods generally operate.
+
+![](~/r/tidyModelingWithR/images/resampling.svg)
+
+
+
+
+
+
+
+
+
+
