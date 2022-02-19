@@ -4918,19 +4918,44 @@ object |	train |	test
 lm_fit |	0.0751 |	0.0754
 rf_fit |	0.0364 |	0.0695 
 
-Notice that the linear regression model is consistent between training and testing, because of its limited complexity14.
+Notice that the linear regression model is consistent 
+between training and testing, because of its limited 
+complexity{^14}.
 
-The main take-away from this example is that re-predicting the training set is a *bad idea* for most models.
+The main take-away from this example is that re-predicting 
+the training set is a *bad idea* for most models.
 
-If the test set should not be used immediately, and re-predicting the training set is a bad idea, what should be done? Resampling methods, such as cross-validation or validation sets, are the solution.
+If the test set should not be used immediately, and 
+re-predicting the training set is a bad idea, what should 
+be done? Resampling methods, such as cross-validation or 
+validation sets, are the solution.
 
-## 10.2 Resampling methods
+### 10.2 Resampling methods
 
-Resampling methods are empirical simulation systems that emulate the process of using some data for modeling and different data for evaluation. Most resampling methods are iterative, meaning that this process is repeated multiple times. The diagram in Figure 10.1 illustrates how resampling methods generally operate.
+Resampling methods are empirical simulation systems that 
+emulate the process of using some data for modeling and 
+different data for evaluation. Most resampling methods are 
+iterative, meaning that this process is repeated multiple 
+times. The diagram in Figure 10.1 illustrates how 
+resampling methods generally operate.
 
 ![](~/r/tidyModelingWithR/images/resampling.svg)
 
+Resampling is only conducted on the training set. The test set is not involved. For each iteration of resampling, the data are partitioned into two subsamples:
 
+    The model is fit with the analysis set.
+
+    The model is evaluated with the assessment set.
+
+These are somewhat analogous to training and test sets. Our language of analysis and assessment avoids confusion with initial split of the data. These data sets are mutually exclusive. The partitioning scheme used to create the analysis and assessment sets is usually the defining characteristic of the method.
+
+Suppose twenty iterations of resampling are conducted. This means that twenty separate models are fit on the analysis sets and the corresponding assessment sets produce twenty sets of performance statistics. The final estimate of performance for a model is the average of the twenty replicates of the statistics. This average has very good generalization properties and is far better than the resubstituion estimates.
+
+The next section defines several commonly used methods and discusses their pros and cons.
+
+#### 10.2.1 Cross-validation
+
+Cross-validation is a well established resampling method. While there are a number of variations, the most common cross-validation method is V-fold cross-validation. The data are randomly partitioned into V sets of roughly equal size (called the “folds”). For illustration, V = 3 is shown in Figure 10.2 for a data set of thirty training set points with random fold allocations. The number inside the symbols is the sample number.
 
 
 
