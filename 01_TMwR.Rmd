@@ -4960,10 +4960,14 @@ The next section defines several commonly used methods and discusses their pros 
 
 Cross-validation is a well established resampling method. While there are a number of variations, the most common cross-validation method is V-fold cross-validation. The data are randomly partitioned into V sets of roughly equal size (called the “folds”). For illustration, V = 3 is shown in Figure 10.2 for a data set of thirty training set points with random fold allocations. The number inside the symbols is the sample number.
 
+[](~/r/tidyModelingWithR/images/three-CV.svg)
 
+The color of the symbols represent their randomly assigned folds. Stratified sampling is also an option for assigning folds (previously discussed in Section 5.1).
 
+For 3-fold cross-validation, the three iterations of resampling are illustrated in Figure 10.3. For each iteration, one fold is held out for assessment statistics and the remaining folds are substrate for the model. This process continues for each fold so that three models produce three sets of performance statistics.
 
+[](~/r/tidyModelingWithR/images/three-CV-iter.svg)
 
-
-
-
+```{r}
+getwd()
+```
