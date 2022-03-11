@@ -4867,7 +4867,10 @@ rf_wflow <-
 rf_fit <- rf_wflow %>% fit(data = ames_train)
 ```
 
-How should the two models be compared? For demonstration, we will predict the training set to produce what is known as the “apparent error rate” or the “resubstitution error rate”. This function creates predictions and formats the results:
+How should the two models be compared? For demonstration, we 
+will predict the training set to produce what is known as the 
+“apparent error rate” or the “resubstitution error rate”. This 
+function creates predictions and formats the results:
 
 ```{r}
 estimate_perf <- function(model, dat) {
@@ -4889,14 +4892,20 @@ estimate_perf <- function(model, dat) {
 }
 ```
 
-Both RMSE and R2 are computed. The resubstitution statistics are:
+Both RMSE and R2 are computed. The resubstitution statistics 
+are:
 
 ```{r}
 estimate_perf(rf_fit, ames_train)
 estimate_perf(lm_fit, ames_train)
 ```
 
-Based on these results, the random forest is much more capable of predicting the sale prices; the RMSE estimate is 2.06-fold better than linear regression. If these two models were under consideration for this prediction problem, the random forest would probably be chosen. The next step applies the random forest model to the test set for final verification:
+Based on these results, the random forest is much more capable 
+of predicting the sale prices; the RMSE estimate is 2.06-fold 
+better than linear regression. If these two models were under 
+consideration for this prediction problem, the random forest 
+would probably be chosen. The next step applies the random 
+forest model to the test set for final verification:
 
 ```{r}
 estimate_perf(rf_fit, ames_test)
@@ -4904,13 +4913,29 @@ estimate_perf(rf_fit, ames_test)
 
 The test set RMSE estimate, 0.0695, is much worse than the training set value of 0.0364! Why did this happen?
 
-Many predictive models are capable of learning complex trends from the data. In statistics, these are commonly referred to as low bias models.
+Many predictive models are capable of learning complex trends 
+from the data. In statistics, these are commonly referred to 
+as low bias models.
 
-In this context, bias is the difference between the true data pattern and the types of patterns that the model can emulate. Many black-box machine learning models have low bias. Other models (such as linear/logistic regression, discriminant analysis, and others) are not as adaptable and are considered high-bias models. See Section 1.2.5 of M. Kuhn and Johnson (2020) for a discussion.
+In this context, bias is the difference between the true data 
+pattern and the types of patterns that the model can emulate. 
+Many black-box machine learning models have low bias. Other 
+models (such as linear/logistic regression, discriminant 
+analysis, and others) are not as adaptable and are considered 
+high-bias models. See Section 1.2.5 of M. Kuhn and Johnson 
+(2020) for a discussion.
 
-For a low-bias model, the high degree of predictive capacity can sometimes result in the model nearly memorizing the training set data. As an obvious example, consider a 1-nearest neighbor model. It will always provide perfect predictions for the training set no matter how well it truly works for other data sets. Random forest models are similar; re-predicting the training set will always result in an artificially optimistic estimate of performance.
+For a low-bias model, the high degree of predictive capacity 
+can sometimes result in the model nearly memorizing the 
+training set data. As an obvious example, consider a 1-nearest 
+neighbor model. It will always provide perfect predictions for 
+the training set no matter how well it truly works for other 
+data sets. Random forest models are similar; re-predicting the 
+training set will always result in an artificially optimistic 
+estimate of performance.
 
-For both models, Table 10.1 summarizes the RMSE estimate for the training and test sets:
+For both models, Table 10.1 summarizes the RMSE estimate for 
+the training and test sets:
 
 
 #### Performance statistics for training and test sets
@@ -4944,27 +4969,54 @@ resampling methods generally operate.
 
 ![](~/r/tidyModelingWithR/images/resampling.svg)
 
-Resampling is only conducted on the training set. The test set is not involved. For each iteration of resampling, the data are partitioned into two subsamples:
+Resampling is only conducted on the training set. The test set 
+is not involved. For each iteration of resampling, the data 
+are partitioned into two subsamples:
 
     The model is fit with the analysis set.
 
     The model is evaluated with the assessment set.
 
-These are somewhat analogous to training and test sets. Our language of analysis and assessment avoids confusion with initial split of the data. These data sets are mutually exclusive. The partitioning scheme used to create the analysis and assessment sets is usually the defining characteristic of the method.
+These are somewhat analogous to training and test sets. Our 
+language of analysis and assessment avoids confusion with 
+initial split of the data. These data sets are mutually 
+exclusive. The partitioning scheme used to create the analysis 
+and assessment sets is usually the defining characteristic of 
+the method.
 
-Suppose twenty iterations of resampling are conducted. This means that twenty separate models are fit on the analysis sets and the corresponding assessment sets produce twenty sets of performance statistics. The final estimate of performance for a model is the average of the twenty replicates of the statistics. This average has very good generalization properties and is far better than the resubstituion estimates.
+Suppose twenty iterations of resampling are conducted. This 
+means that twenty separate models are fit on the analysis sets 
+and the corresponding assessment sets produce twenty sets of 
+performance statistics. The final estimate of performance for 
+a model is the average of the twenty replicates of the 
+statistics. This average has very good generalization 
+properties and is far better than the resubstituion estimates.
 
 The next section defines several commonly used methods and discusses their pros and cons.
 
 #### 10.2.1 Cross-validation
 
-Cross-validation is a well established resampling method. While there are a number of variations, the most common cross-validation method is V-fold cross-validation. The data are randomly partitioned into V sets of roughly equal size (called the “folds”). For illustration, V = 3 is shown in Figure 10.2 for a data set of thirty training set points with random fold allocations. The number inside the symbols is the sample number.
+Cross-validation is a well established resampling method. 
+While there are a number of variations, the most common 
+cross-validation method is V-fold cross-validation. The data 
+are randomly partitioned into V sets of roughly equal size 
+(called the “folds”). For illustration, V = 3 is shown in 
+Figure 10.2 for a data set of thirty training set points with 
+random fold allocations. The number inside the symbols is the 
+sample number.
 
 [](~/r/tidyModelingWithR/images/three-CV.svg)
 
-The color of the symbols represent their randomly assigned folds. Stratified sampling is also an option for assigning folds (previously discussed in Section 5.1).
+The color of the symbols represent their randomly assigned 
+folds. Stratified sampling is also an option for assigning 
+folds (previously discussed in Section 5.1).
 
-For 3-fold cross-validation, the three iterations of resampling are illustrated in Figure 10.3. For each iteration, one fold is held out for assessment statistics and the remaining folds are substrate for the model. This process continues for each fold so that three models produce three sets of performance statistics.
+For 3-fold cross-validation, the three iterations of 
+resampling are illustrated in Figure 10.3. For each iteration, 
+one fold is held out for assessment statistics and the 
+remaining folds are substrate for the model. This process 
+continues for each fold so that three models produce three 
+sets of performance statistics.
 
 [](~/r/tidyModelingWithR/images/three-CV-iter.svg)
 
